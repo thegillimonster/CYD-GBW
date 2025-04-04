@@ -25,37 +25,37 @@ XPT2046_Touchscreen ts(XPT2046_CS, XPT2046_IRQ);
 
 TFT_eSPI tft = TFT_eSPI();
 
-struct Button {
-  int x, y, w, h;
-  String label;
-};
+// struct Button {
+//   int x, y, w, h;
+//   String label;
+// };
 
-Button mainMenuButtons[] = {
-  {40, 60, 80, 40, "Espresso"},
-  {160, 60, 80, 40, "Drip"},
-  {40, 120, 80, 40, "Calibrate"},
-  {160, 120, 80, 40, "Settings"}
-};
+// Button mainMenuButtons[] = {
+//   {40, 60, 80, 40, "Espresso"},
+//   {160, 60, 80, 40, "Drip"},
+//   {40, 120, 80, 40, "Calibrate"},
+//   {160, 120, 80, 40, "Settings"}
+// };
 
-Button espressoButtons[] = {
-  {40, 60, 80, 40, "18g"},
-  {160, 60, 80, 40, "18.5g"},
-  {40, 120, 80, 40, "19g"},
-  {160, 120, 80, 40, "19.5g"}
-};
+// Button espressoButtons[] = {
+//   {40, 60, 80, 40, "18g"},
+//   {160, 60, 80, 40, "18.5g"},
+//   {40, 120, 80, 40, "19g"},
+//   {160, 120, 80, 40, "19.5g"}
+// };
 
-Button dripButtons[] = {
-  {20, 40, 60, 40, "3"},
-  {90, 40, 60, 40, "4"},
-  {160, 40, 60, 40, "5"},
-  {230, 40, 60, 40, "6"},
-  {20, 100, 60, 40, "7"},
-  {90, 100, 60, 40, "8"},
-  {160, 100, 60, 40, "9"},
-  {230, 100, 60, 40, "10"},
-  {20, 160, 60, 40, "11"},
-  {90, 160, 60, 40, "12"}
-};
+// Button dripButtons[] = {
+//   {20, 40, 60, 40, "3"},
+//   {90, 40, 60, 40, "4"},
+//   {160, 40, 60, 40, "5"},
+//   {230, 40, 60, 40, "6"},
+//   {20, 100, 60, 40, "7"},
+//   {90, 100, 60, 40, "8"},
+//   {160, 100, 60, 40, "9"},
+//   {230, 100, 60, 40, "10"},
+//   {20, 160, 60, 40, "11"},
+//   {90, 160, 60, 40, "12"}
+// };
 
 
 void setup() {
@@ -91,13 +91,47 @@ void setup() {
 
 void loop(){
 
-//fix below to be activated from the screen
-
-  if (ts.tirqTouched() && ts.touched()) {
+if (ts.tirqTouched() && ts.touched()) {
+    // Retrieve the touch point data
     TS_Point p = ts.getPoint();
-    printTouchToSerial(p);
-    handleTouch(p.x, p.y);
-    delay(100);
+
+    // --- THIS IS THE ADDED LOGIC ---
+    // It's often necessary to map raw touch coordinates to screen coordinates.
+    // However, with TFT_eSPI and XPT2046_Touchscreen, if setRotation() is
+    // called correctly on both, the coordinates MIGHT already be mapped.
+    // Let's assume p.x and p.y are screen coordinates for now.
+    // Display size is typically 320x240 in rotation 1.
+    // Check your specific display if buttons seem offset.
+
+    int screenX = p.x;
+    int screenY = p.y;
+
+    // Print coordinates for debugging (optional)
+    Serial.printf("Touch detected at Screen X: %d, Screen Y: %d (Raw: X=%d, Y=%d, Z=%d)\n", screenX, screenY, p.x, p.y, p.z);
+
+    // Check if the touch coordinates fall within any button bounds
+    // Button 1: x=10..110, y=10..110
+    if ((screenX >= 10 && screenX <= 110) && (screenY >= 10 && screenY <= 110)) {
+      buttonAction(1);
+      // Simple debounce: Wait briefly after detecting a press in a button area
+      // to avoid multiple triggers from a single touch.
+      delay(200); 
+    }
+    // Button 2: x=120..220, y=10..110
+    else if ((screenX >= 120 && screenX <= 220) && (screenY >= 10 && screenY <= 110)) {
+      buttonAction(2);
+      delay(200);
+    }
+    // Button 3: x=10..110, y=120..220
+    else if ((screenX >= 10 && screenX <= 110) && (screenY >= 120 && screenY <= 220)) {
+      buttonAction(3);
+      delay(200);
+    }
+    // Button 4: x=120..220, y=120..220
+    else if ((screenX >= 120 && screenX <= 220) && (screenY >= 120 && screenY <= 220)) {
+      buttonAction(4);
+      delay(200);
+    }
   }
 }
 
@@ -132,80 +166,139 @@ void printTouchToSerial(TS_Point p) {
 
 void displayMainMenu() {
   tft.fillScreen(TFT_BLACK);
-  for (int i = 0; i < 4; i++) {
-    drawButton(mainMenuButtons[i]);
-  }
-}
-
-void displayEspressoMenu() {
-  tft.fillScreen(TFT_BLACK);
-  for (int i = 0; i < 4; i++) {
-    drawButton(espressoButtons[i]);
-  }
-}
-
-void displayDripMenu() {
-  tft.fillScreen(TFT_BLACK);
-  tft.setTextColor(TFT_WHITE);
+  tft.setTextColor(TFT_WHITE, TFT_BLUE);
   tft.setTextSize(2);
-  tft.setCursor(10, 10);
-  tft.print("Cups:");
-  for (int i = 0; i < 10; i++) {
-    drawButton(dripButtons[i]);
+
+  // Draw Button 1
+  tft.fillRect(10, 10, 100, 100, TFT_BLUE);
+  tft.drawCentreString("1", 10 + 50, 10 + 40, 4); // x, y, font_number
+
+  // Draw Button 2
+  tft.fillRect(120, 10, 100, 100, TFT_RED);
+  tft.drawCentreString("2", 120 + 50, 10 + 40, 4);
+
+  // Draw Button 3
+  tft.fillRect(10, 120, 100, 100, TFT_GREEN);
+  tft.drawCentreString("3", 10 + 50, 120 + 40, 4);
+
+  // Draw Button 4
+  tft.fillRect(120, 120, 100, 100, TFT_YELLOW);
+  tft.setTextColor(TFT_BLACK, TFT_YELLOW); // Text color that contrasts yellow
+  tft.drawCentreString("4", 120 + 50, 120 + 40, 4);
   }
 }
 
-void displayCalibrateScreen() {
-  tft.fillScreen(TFT_BLACK);
-  tft.setTextColor(TFT_WHITE);
-  tft.setTextSize(2);
-  tft.setCursor(10, 10);
-  tft.print("Place 100g on scale");
-  calibrate();
-}
+void buttonAction(int buttonNumber) {
+  Serial.print("Button ");
+  Serial.print(buttonNumber);
+  Serial.println(" pressed!");
 
-void drawButton(Button btn) {
-  tft.fillRect(btn.x, btn.y, btn.w, btn.h, TFT_BLUE);
-  tft.setTextColor(TFT_WHITE);
-  tft.setTextSize(2);
-  tft.setCursor(btn.x + 10, btn.y + 10);
-  tft.print(btn.label);
-}
-
-void handleTouch(int x, int y) {
-  for (int i = 0; i < 4; i++) {
-    if (isButtonPressed(mainMenuButtons[i], x, y)) {
-      if (mainMenuButtons[i].label == "Espresso") {
-        displayEspressoMenu();
-      } else if (mainMenuButtons[i].label == "Drip") {
-        displayDripMenu();
-      } else if (mainMenuButtons[i].label == "Calibrate") {
-        displayCalibrateScreen();
-      } else if (mainMenuButtons[i].label == "Settings") {
-        // Handle settings
-      }
-    }
-  }
-
-  for (int i = 0; i < 4; i++) {
-    if (isButtonPressed(espressoButtons[i], x, y)) {
-      float grindAmount = espressoButtons[i].label.toFloat();
-      grind(grindAmount);
-    }
-  }
-
-  for (int i = 0; i < 10; i++) {
-    if (isButtonPressed(dripButtons[i], x, y)) {
-      int cups = dripButtons[i].label.toInt();
-      float grindAmount = cups * 9.3;
-      grind(grindAmount);
-    }
+  // Add actions for each button here
+  switch (buttonNumber) {
+    case 1:
+      // Action for button 1
+      tft.fillScreen(TFT_BLUE);
+      tft.setTextColor(TFT_WHITE);
+      tft.drawCentreString("Button 1 Action", tft.width()/2, tft.height()/2, 4);
+      delay(2000); // Show message for 2 seconds
+      drawMainMenu(); // Go back to main menu
+      break;
+    case 2:
+      // Action for button 2
+      tft.fillScreen(TFT_RED);
+      tft.setTextColor(TFT_WHITE);
+      tft.drawCentreString("Button 2 Action", tft.width()/2, tft.height()/2, 4);
+      delay(2000);
+      drawMainMenu();
+      break;
+    case 3:
+      // Action for button 3
+       tft.fillScreen(TFT_GREEN);
+      tft.setTextColor(TFT_BLACK);
+      tft.drawCentreString("Button 3 Action", tft.width()/2, tft.height()/2, 4);
+      delay(2000);
+      drawMainMenu();
+      break;
+    case 4:
+      // Action for button 4
+      tft.fillScreen(TFT_YELLOW);
+      tft.setTextColor(TFT_BLACK);
+      tft.drawCentreString("Button 4 Action", tft.width()/2, tft.height()/2, 4);
+      delay(2000);
+      drawMainMenu();
+      break;
   }
 }
 
-bool isButtonPressed(Button btn, int x, int y) {
-  return (x > btn.x && x < btn.x + btn.w && y > btn.y && y < btn.y + btn.h);
-}
+// void displayEspressoMenu() {
+//   tft.fillScreen(TFT_BLACK);
+//   for (int i = 0; i < 4; i++) {
+//     drawButton(espressoButtons[i]);
+//   }
+// }
+
+// void displayDripMenu() {
+//   tft.fillScreen(TFT_BLACK);
+//   tft.setTextColor(TFT_WHITE);
+//   tft.setTextSize(2);
+//   tft.setCursor(10, 10);
+//   tft.print("Cups:");
+//   for (int i = 0; i < 10; i++) {
+//     drawButton(dripButtons[i]);
+//   }
+// }
+
+// void displayCalibrateScreen() {
+//   tft.fillScreen(TFT_BLACK);
+//   tft.setTextColor(TFT_WHITE);
+//   tft.setTextSize(2);
+//   tft.setCursor(10, 10);
+//   tft.print("Place 100g on scale");
+//   calibrate();
+// }
+
+// void drawButton(Button btn) {
+//   tft.fillRect(btn.x, btn.y, btn.w, btn.h, TFT_BLUE);
+//   tft.setTextColor(TFT_WHITE);
+//   tft.setTextSize(2);
+//   tft.setCursor(btn.x + 10, btn.y + 10);
+//   tft.print(btn.label);
+// }
+
+// void handleTouch(int x, int y) {
+//   for (int i = 0; i < 4; i++) {
+//     if (isButtonPressed(mainMenuButtons[i], x, y)) {
+//       if (mainMenuButtons[i].label == "Espresso") {
+//         displayEspressoMenu();
+//       } else if (mainMenuButtons[i].label == "Drip") {
+//         displayDripMenu();
+//       } else if (mainMenuButtons[i].label == "Calibrate") {
+//         displayCalibrateScreen();
+//       } else if (mainMenuButtons[i].label == "Settings") {
+//         // Handle settings
+//       }
+//     }
+//   }
+
+//   for (int i = 0; i < 4; i++) {
+//     if (isButtonPressed(espressoButtons[i], x, y)) {
+//       float grindAmount = espressoButtons[i].label.toFloat();
+//       grind(grindAmount);
+//     }
+//   }
+
+//   for (int i = 0; i < 10; i++) {
+//     if (isButtonPressed(dripButtons[i], x, y)) {
+//       int cups = dripButtons[i].label.toInt();
+//       float grindAmount = cups * 9.3;
+//       grind(grindAmount);
+//     }
+//   }
+// }
+
+// bool isButtonPressed(Button btn, int x, int y) {
+//   return (x > btn.x && x < btn.x + btn.w && y > btn.y && y < btn.y + btn.h);
+// }
 
 void grind(float amount) {
   tft.fillScreen(TFT_WHITE);
