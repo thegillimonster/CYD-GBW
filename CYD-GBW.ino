@@ -14,6 +14,19 @@
 #define XPT2046_MISO 39
 #define XPT2046_CLK 25
 #define XPT2046_CS 33
+
+const int btnW = 145;
+const int btnH = 105;
+const int btnX1 = 10;
+const int btnY1 = 10;
+const int btnX2 = 165;
+const int btnY2 = 125;
+
+const char* btn1Label = "Espresso";
+const char* btn2Label = "Drip";
+const char* btn3Label = "Calibrate";
+const char* btn4Label = "On/Off";
+
 // const int LOADCELL_DOUT_PIN = 3;
 // const int LOADCELL_SCK_PIN = 2;
 
@@ -79,26 +92,24 @@ if (ts.tirqTouched() && ts.touched()) {
 
     // Check if the touch coordinates fall within any button bounds
     // Button 1: x=10..110, y=10..110
-    if ((screenX >= 10 && screenX <= 110) && (screenY >= 10 && screenY <= 110)) {
-      buttonAction(1);
-      // Simple debounce: Wait briefly after detecting a press in a button area
-      // to avoid multiple triggers from a single touch.
-      delay(200); 
+ if ((screenX >= btnX1 && screenX <= btnX1 + btnW -1) && (screenY >= btnY1 && screenY <= btnY1 + btnH -1)) {
+      buttonAction(1); // Espresso
+      delay(200); // Debounce
     }
-    // Button 2: x=120..220, y=10..110
-    else if ((screenX >= 120 && screenX <= 220) && (screenY >= 10 && screenY <= 110)) {
-      buttonAction(2);
-      delay(200);
+    // Check Button 2 (Drip: X=165..309, Y=10..114)
+    else if ((screenX >= btnX2 && screenX <= btnX2 + btnW -1) && (screenY >= btnY1 && screenY <= btnY1 + btnH -1)) {
+      buttonAction(2); // Drip
+      delay(200); // Debounce
     }
-    // Button 3: x=10..110, y=120..220
-    else if ((screenX >= 10 && screenX <= 110) && (screenY >= 120 && screenY <= 220)) {
-      buttonAction(3);
-      delay(200);
+    // Check Button 3 (Calibrate: X=10..154, Y=125..229)
+    else if ((screenX >= btnX1 && screenX <= btnX1 + btnW -1) && (screenY >= btnY2 && screenY <= btnY2 + btnH -1)) {
+      buttonAction(3); // Calibrate
+      delay(200); // Debounce
     }
-    // Button 4: x=120..220, y=120..220
-    else if ((screenX >= 120 && screenX <= 220) && (screenY >= 120 && screenY <= 220)) {
-      buttonAction(4);
-      delay(200);
+    // Check Button 4 (On/Off: X=165..309, Y=125..229)
+    else if ((screenX >= btnX2 && screenX <= btnX2 + btnW -1) && (screenY >= btnY2 && screenY <= btnY2 + btnH -1)) {
+      buttonAction(4); // On/Off
+      delay(200); // Debounce
     }
   }
 }
@@ -113,71 +124,95 @@ void printTouchToSerial(TS_Point p) {
   Serial.println();
 }
 
-void drawMainMenu() {
-  tft.fillScreen(TFT_BLACK);
-  tft.setTextColor(TFT_WHITE, TFT_BLUE);
-  tft.setTextSize(2);
-
-  // Draw Button 1
-  tft.fillRect(10, 10, 100, 100, TFT_BLUE);
-  tft.drawCentreString("1", 10 + 50, 10 + 40, 4); // x, y, font_number
-
-  // Draw Button 2
-  tft.fillRect(120, 10, 100, 100, TFT_RED);
-  tft.drawCentreString("2", 120 + 50, 10 + 40, 4);
-
-  // Draw Button 3
-  tft.fillRect(10, 120, 100, 100, TFT_GREEN);
-  tft.drawCentreString("3", 10 + 50, 120 + 40, 4);
-
-  // Draw Button 4
-  tft.fillRect(120, 120, 100, 100, TFT_YELLOW);
-  tft.setTextColor(TFT_BLACK, TFT_YELLOW); // Text color that contrasts yellow
-  tft.drawCentreString("4", 120 + 50, 120 + 40, 4);
-  }
-
-void buttonAction(int buttonNumber) {
-  Serial.print("Button ");
-  Serial.print(buttonNumber);
-  Serial.println(" pressed!");
-
-  // Add actions for each button here
-  switch (buttonNumber) {
-    case 1:
-      // Action for button 1
-      tft.fillScreen(TFT_BLUE);
-      tft.setTextColor(TFT_WHITE);
-      tft.drawCentreString("Button 1 Action", tft.width()/2, tft.height()/2, 4);
-      delay(2000); // Show message for 2 seconds
-      drawMainMenu(); // Go back to main menu
-      break;
-    case 2:
-      // Action for button 2
-      tft.fillScreen(TFT_RED);
-      tft.setTextColor(TFT_WHITE);
-      tft.drawCentreString("Button 2 Action", tft.width()/2, tft.height()/2, 4);
-      delay(2000);
-      drawMainMenu();
-      break;
-    case 3:
-      // Action for button 3
-       tft.fillScreen(TFT_GREEN);
-      tft.setTextColor(TFT_BLACK);
-      tft.drawCentreString("Button 3 Action", tft.width()/2, tft.height()/2, 4);
-      delay(2000);
-      drawMainMenu();
-      break;
-    case 4:
-      // Action for button 4
-      tft.fillScreen(TFT_YELLOW);
-      tft.setTextColor(TFT_BLACK);
-      tft.drawCentreString("Button 4 Action", tft.width()/2, tft.height()/2, 4);
-      delay(2000);
-      drawMainMenu();
-      break;
-  }
+void drawCenteredText(const char* text, int x, int y, int w, int h) {
+    int16_t textX, textY; // To store top-left coord of text
+    uint16_t textW, textH; // To store text width & height
+    tft.setTextDatum(MC_DATUM); // Set datum to Middle Center
+    // The getTextBounds function is useful but requires more setup.
+    // drawString centers text based on the datum automatically at the given x,y
+    // Let's calculate the center of the button area
+    int centerX = x + w / 2;
+    int centerY = y + h / 2;
+    tft.drawString(text, centerX, centerY);
 }
 
+void drawMainMenu() {
+  // Set background to white
+  tft.fillScreen(TFT_WHITE);
+
+  // Set text properties for buttons
+  tft.setTextColor(TFT_BLACK);
+  tft.setTextSize(2); // Adjust text size if needed (1, 2, 3...)
+                      // Note: drawCenteredText helper uses drawString which respects setTextSize
+                      // If using built-in fonts (e.g., with drawCentreString), use font number instead.
+
+  // Draw Button 1 (Espresso)
+  tft.fillRect(btnX1, btnY1, btnW, btnH, TFT_YELLOW); // Yellow button background
+  tft.drawRect(btnX1, btnY1, btnW, btnH, TFT_BLACK); // Optional: black border
+  drawCenteredText(btn1Label, btnX1, btnY1, btnW, btnH);
+
+  // Draw Button 2 (Drip)
+  tft.fillRect(btnX2, btnY1, btnW, btnH, TFT_YELLOW);
+  tft.drawRect(btnX2, btnY1, btnW, btnH, TFT_BLACK); // Optional border
+  drawCenteredText(btn2Label, btnX2, btnY1, btnW, btnH);
+
+  // Draw Button 3 (Calibrate)
+  tft.fillRect(btnX1, btnY2, btnW, btnH, TFT_YELLOW);
+  tft.drawRect(btnX1, btnY2, btnW, btnH, TFT_BLACK); // Optional border
+  drawCenteredText(btn3Label, btnX1, btnY2, btnW, btnH);
+
+  // Draw Button 4 (On/Off)
+  tft.fillRect(btnX2, btnY2, btnW, btnH, TFT_YELLOW);
+  tft.drawRect(btnX2, btnY2, btnW, btnH, TFT_BLACK); // Optional border
+  drawCenteredText(btn4Label, btnX2, btnY2, btnW, btnH);
+}
+
+void buttonAction(int buttonNumber) {
+  const char* actionLabel = "";
+  uint16_t bgColor = TFT_BLACK; // Default background for action screen
+
+  switch (buttonNumber) {
+    case 1:
+      actionLabel = btn1Label; // Espresso
+      bgColor = TFT_BROWN; // Example color
+      Serial.printf("Button Action: %s\n", actionLabel);
+      // Add action for Espresso here
+      break;
+    case 2:
+      actionLabel = btn2Label; // Drip
+      bgColor = TFT_DARKGREY; // Example color
+      Serial.printf("Button Action: %s\n", actionLabel);
+      // Add action for Drip here
+      break;
+    case 3:
+      actionLabel = btn3Label; // Calibrate
+      bgColor = TFT_ORANGE; // Example color
+      Serial.printf("Button Action: %s\n", actionLabel);
+      // Add action for Calibrate here (e.g., run touch calibration routine)
+      break;
+    case 4:
+      actionLabel = btn4Label; // On/Off
+      bgColor = TFT_RED; // Example color
+      Serial.printf("Button Action: %s\n", actionLabel);
+      // Add action for On/Off here (e.g., toggle state, go to sleep)
+      break;
+    default: // Should not happen
+       Serial.printf("Unknown Button Action: %d\n", buttonNumber);
+       return; // Exit if button number is unexpected
+  }
+  // --- Display Action Feedback ---
+  tft.fillScreen(bgColor);
+  tft.setTextColor(TFT_WHITE);
+  tft.setTextSize(3); // Larger text for feedback
+  tft.setTextDatum(MC_DATUM); // Middle Center
+  tft.drawString(actionLabel, tft.width() / 2, tft.height() / 2);
+
+  delay(1500); // Show feedback for 1.5 seconds
+  drawMainMenu(); // Return to main menu
+
+  // Clear any lingering touch after action
+  while (ts.touched()) { delay(10); }
+}
 //   // Read raw value from load cell
 //   float raw_weight = scale.get_units(10);
 
