@@ -4,6 +4,11 @@
 // #include <HX711.h>
 // #include <SimpleKalmanFilter.h>
 
+#define TOUCH_X_MIN 500  // Raw minimum X value (touch top-left corner)
+#define TOUCH_X_MAX 3700 // Raw maximum X value (touch bottom-right corner)
+#define TOUCH_Y_MIN 400  // Raw minimum Y value (touch top-left corner)
+#define TOUCH_Y_MAX 3700 // Raw maximum Y value (touch bottom-right corner)
+
 #define XPT2046_IRQ 36
 #define XPT2046_MOSI 32
 #define XPT2046_MISO 39
@@ -45,7 +50,7 @@ void setup() {
   int fontSize = 2;
 
   // Display main menu
-  displayMainMenu();
+  drawMainMenu();
 
 }
 
@@ -63,8 +68,11 @@ if (ts.tirqTouched() && ts.touched()) {
     // Display size is typically 320x240 in rotation 1.
     // Check your specific display if buttons seem offset.
 
-    int screenX = p.x;
-    int screenY = p.y;
+    int screenX = map(p.x, TOUCH_X_MIN, TOUCH_X_MAX, 0, tft.width());
+    int screenY = map(p.y, TOUCH_Y_MIN, TOUCH_Y_MAX, 0, tft.height());
+
+    screenX = constrain(screenX, 0, tft.width() -1);
+    screenY = constrain(screenY, 0, tft.height() -1);
 
     // Print coordinates for debugging (optional)
     Serial.printf("Touch detected at Screen X: %d, Screen Y: %d (Raw: X=%d, Y=%d, Z=%d)\n", screenX, screenY, p.x, p.y, p.z);
@@ -105,7 +113,7 @@ void printTouchToSerial(TS_Point p) {
   Serial.println();
 }
 
-void displayMainMenu() {
+void drawMainMenu() {
   tft.fillScreen(TFT_BLACK);
   tft.setTextColor(TFT_WHITE, TFT_BLUE);
   tft.setTextSize(2);
