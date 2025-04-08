@@ -3,8 +3,8 @@
 #include <TFT_eSPI.h>
 #include <stdio.h> // For sprintf
 #include <stdlib.h> // For dtostrf (float to string)
-// #include <HX711.h>
-// #include <SimpleKalmanFilter.h>
+#include <HX711.h>
+#include <SimpleKalmanFilter.h>
 
 #define TOUCH_X_MIN 500  // Raw minimum X value (touch top-left corner)
 #define TOUCH_X_MAX 3700 // Raw maximum X value (touch bottom-right corner)
@@ -74,15 +74,15 @@ void handleOnOffTouch(int x, int y);
 void displayTemporaryMessage(const char* msg, uint16_t duration);
 void drawStyledButton(const char* label, int x, int y, int w, int h);
 
-// const int LOADCELL_DOUT_PIN = 3;
-// const int LOADCELL_SCK_PIN = 2;
+const int LOADCELL_DOUT_PIN = 22;
+const int LOADCELL_SCK_PIN = 27;
 
-// Create HX711 and kalmna filter object
-// HX711 scale;
-// SimpleKalmanFilter kf(0.02, 0.02, 0.01); // Adjust parameters as needed
+Create HX711 and kalmna filter object
+HX711 scale;
+SimpleKalmanFilter kf(0.02, 0.02, 0.01); // Adjust parameters as needed
 
-// // Calibration factor for the load cell
-// float calibration_factor = -7050; // Initial calibration factor
+// Calibration factor for the load cell
+float calibration_factor = -7050; // Initial calibration factor
 
 
 SPIClass mySpi = SPIClass(VSPI);
@@ -379,53 +379,3 @@ void handleOnOffTouch(int x, int y) {
       drawOnOffScreen(); // Redraw the screen with the new color/state
   }
 }
-
-//   // Read raw value from load cell
-//   float raw_weight = scale.get_units(10);
-
-//   // Apply Kalman filter to raw weight
-//   float filtered_weight = kf.updateEstimate(raw_weight);
-
-//   // Print the filtered weight
-//   Serial.print("Filtered Weight: ");
-//   Serial.println(filtered_weight);
-
-//   delay(100);
-
-// void grind(float amount) {
-//   tft.fillScreen(TFT_WHITE);
-//   tft.setTextColor(TFT_BLACK);
-//   tft.setTextSize(3);
-//   tft.setCursor(10, 10);
-//   tft.print("Grinding: ");
-//   tft.print(amount);
-//   tft.print("g");
-
-//   unsigned long startTime = millis();
-//   while (millis() - startTime < 3000) {
-//     if (ts.touched()) {
-//       displayMainMenu();
-//       return;
-//     }
-//   }
-
-//   displayMainMenu();
-// }
-
-// void calibrate() {
-//   Serial.println("Calibrating...");
-
-//   // Read raw value from load cell
-//   float raw_weight = scale.get_units(10);
-
-//   // Known weight for calibration
-//   float known_weight = 100.0; // 100g weight
-
-//   // Calculate new calibration factor
-//   calibration_factor = raw_weight / known_weight;
-//   scale.set_scale(calibration_factor);
-
-//   Serial.print("New calibration factor: ");
-//   Serial.println(calibration_factor);
-//   Serial.println("Calibration complete.");
-// }
